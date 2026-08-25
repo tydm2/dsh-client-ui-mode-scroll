@@ -1,76 +1,102 @@
-# dsh-client-ui-mode-scroll
+# 🎛️ dsh-client-ui-mode-scroll
 
-> **专为 DSH 智能体设计** — Designed specifically for the DeepSeek Harness agent.
+> **专为 DSH 智能体设计 · Designed for the DeepSeek Harness agent**
 
-This client plugin is crafted **for the DSH (DeepSeek Harness) agent itself** — it polishes the agent's own workspace UI so that choosing a mode (agent preset) stays compact and scannable even as custom modes accumulate.
+让 DeepSeek Harness Web 的模式选择器保持整洁——打开时只显示前 4 个内置模式，其余自定义模式收进折叠区，**鼠标滚轮自然下滑即可浏览**，像浏览器滚动一样顺滑，无需强制分页。
 
-A small client plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web that improves the **agent-preset (mode) picker** UX: instead of listing every mode at once, it shows only the first 4 built-in modes (Standard / PTC / Minimal / Creator) and folds the remaining custom modes below — revealed by **natural mouse-wheel scroll**, browser-style, no forced paging.
+Keep the agent-preset picker compact: show only the first 4 built-in modes, fold the rest, and let the mouse wheel scroll them into view — browser-style, no forced paging.
 
-> ⚠️ **Not an official DeepSeek package.** This is a locally authored plugin. The `@deepseek-ai/` name prefix is used only because the Harness client-modules loader mounts plugins under the package name; the code is not affiliated with or maintained by DeepSeek.
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-DeepSeek%20Harness%20Web-2b6cb0.svg)](#)
+[![Type](https://img.shields.io/badge/type-Client%20Plugin-38b2ac.svg)](#)
 
-## Behavior
+---
 
-When you open the mode selector (the agent-preset picker):
+## ✨ 特性 Features
 
-1. **Only the first 4 modes are visible** — measured precisely to 4 rows, not a fixed pixel cutoff; the 4th row is fully visible.
-2. **Custom modes fold below the fold line** — the 5th and later rows are hidden.
-3. **Wheel-scroll down reveals them naturally** — like scrolling any browser list; scroll up to return to the first 4.
+- **🧹 极简呈现** — 打开模式选择器时只露出前 4 个内置模式（Standard / PTC / Minimal / Creator），不被自建模式淹没
+- **📏 精确测量** — 折叠高度按前 4 行实际渲染高度精确量取（`getBoundingClientRect` + padding），非固定像素截断，第 4 个完整可见
+- **🖱️ 浏览器式滚动** — 滚轮下滑自然浏览折叠的其余模式，上滑回到前 4 个；`overscroll-behavior: contain` 防止滚动穿透
+- **🔌 零依赖** — 纯浏览器端 DOM 增强，无网络请求、无服务端状态、无存储
+- **♻️ 即插即用** — 挂载一行 patch 即可，卸载同理，不留残留
 
-## Install
+## 📦 安装 Install
 
-The plugin is a Harness **client** plugin (browser side). To mount it permanently into your `web` profile:
+插件是 Harness **客户端（浏览器端）** 插件。持久挂载到 `web` profile：
 
-1. Copy this package into your profile directory:
+```powershell
+# 1. 复制插件包到 profile 目录（$DSH_HOME 默认为 ~/.dsh）
+Copy-Item -Recurse . "$env:USERPROFILE\.dsh\profiles\web\mode-scroll"
+```
 
-   ```powershell
-   # $DSH_HOME defaults to ~/.dsh
-   Copy-Item -Recurse . "$env:USERPROFILE\.dsh\profiles\web\mode-scroll"
-   ```
+```json
+// 2. 在 profiles/web/package.json 声明依赖
+"dependencies": {
+  "@deepseek-ai/dsh-client-ui-mode-scroll": "file:./mode-scroll"
+}
+```
 
-2. Declare it in `profiles/web/package.json` dependencies:
+```powershell
+# 3. 链接到 profile 的 node_modules（junction / 普通复制 / pnpm install 均可）
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.dsh\profiles\web\node_modules\@deepseek-ai\dsh-client-ui-mode-scroll" -Target "$env:USERPROFILE\.dsh\profiles\web\mode-scroll"
+```
 
-   ```json
-   "dependencies": {
-     "@deepseek-ai/dsh-client-ui-mode-scroll": "file:./mode-scroll"
-   }
-   ```
+```yaml
+# 4. 在 profiles/web/cordis.patch.yml 挂载插件行
+- insert:
+    - id: ui-mode-scroll
+      name: '@deepseek-ai/dsh-client-ui-mode-scroll'
+```
 
-3. Link it into the profile's `node_modules` (a junction works; a regular copy also works, or run `pnpm install` in the profile):
+```powershell
+# 5. 重启 dsh web，打开模式选择器即可生效
+```
 
-   ```powershell
-   New-Item -ItemType Junction -Path "$env:USERPROFILE\.dsh\profiles\web\node_modules\@deepseek-ai\dsh-client-ui-mode-scroll" -Target "$env:USERPROFILE\.dsh\profiles\web\mode-scroll"
-   ```
+## 🚀 用法 Usage
 
-4. Add the plugin row to `profiles/web/cordis.patch.yml`:
+无需任何操作。安装后每次打开模式选择器自动生效：
 
-   ```yaml
-   - insert:
-       - id: ui-mode-scroll
-         name: '@deepseek-ai/dsh-client-ui-mode-scroll'
-   ```
+| 打开前 | 打开后 |
+| --- | --- |
+| 7+ 个模式一次性全部列出 | 只显示前 4 个内置模式 |
+| 找自定义模式需要眯眼扫 | 自定义模式折叠在下方，滚轮下滑即见 |
 
-5. Restart `dsh web`. Open the mode selector to verify: the first 4 built-in modes are visible, the rest appear on wheel scroll.
+## ⚙️ 工作原理 How it works
 
-## How it works
+客户端半监听 agent-preset 选择器的打开（`[role="menu"]` + seat/selector 触发器）。当菜单项超过 4 个时：
 
-The client half observes the DOM for the agent-preset picker opening (`[role="menu"]` triggered by the preset seat/selector button). When the menu holds more than 4 items, it:
+1. 将 `max-height` 设为前 4 行的实际渲染高度（含 padding）
+2. 启用 `overflow-y: auto` + `overscroll-behavior: contain`
+3. 其余元素保持不变——选择器就是一个可正常滚动的浏览器菜单
 
-- sets `max-height` to exactly the first 4 rows (measured via `getBoundingClientRect`, plus padding),
-- enables `overflow-y: auto` with `overscroll-behavior: contain`,
-- keeps everything else untouched, so the picker behaves like a normal scrollable browser menu.
+主机半是一个空的 `apply()`，仅用于让插件行在 Loader 中挂载。
 
-The host half is an empty `apply()` so the row mounts in the Loader. No server state, no network calls, no stored data.
+## 📁 项目结构 Structure
 
-## Uninstall
+```
+dsh-client-ui-mode-scroll/
+├── package.json          # 插件声明（dsh.client.platform: web）
+├── lib/
+│   ├── client.js         # 浏览器端：折叠 + 滚动逻辑
+│   └── index.js          # 主机端：空 apply（保证挂载）
+└── README.md
+```
 
-Remove the row from `cordis.patch.yml`, delete the `mode-scroll` folder, and drop the dependency + link, then restart `dsh web`.
+## ❓ FAQ
 
-## Security
+**为什么用 `@deepseek-ai/` 前缀？**
+Harness 的 client-modules 加载器按包名挂载插件，`@deepseek-ai/` 只是命名空间要求。⚠️ 这是**本地作者插件**，非 DeepSeek 官方维护。
 
-- No keys, tokens, credentials, or personal data are read, stored, or transmitted.
-- The plugin only inspects the picker menu's DOM geometry in the browser.
-- No network requests are made by the plugin itself.
+**会读取或发送任何数据吗？**
+不会。插件只读取选择器菜单的 DOM 几何信息（浏览器内），无网络请求、无存储、无遥测。
 
-## License
+**模式多了会怎样？**
+折叠区始终显示前 4 行，其余全部通过滚轮浏览——无论多少个自定义模式，选择器都保持同样的紧凑高度。
 
-MIT
+## 🤝 贡献 Contributing
+
+PR、Issue 均欢迎。保持无依赖、无网络、无个人信息的原则即可。
+
+## 📄 License
+
+[MIT](LICENSE)
