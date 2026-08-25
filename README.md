@@ -1,5 +1,9 @@
 # dsh-client-ui-mode-scroll
 
+> **专为 DSH 智能体设计** — Designed specifically for the DeepSeek Harness agent.
+
+This client plugin is crafted **for the DSH (DeepSeek Harness) agent itself** — it polishes the agent's own workspace UI so that choosing a mode (agent preset) stays compact and scannable even as custom modes accumulate.
+
 A small client plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web that improves the **agent-preset (mode) picker** UX: instead of listing every mode at once, it shows only the first 4 built-in modes (Standard / PTC / Minimal / Creator) and folds the remaining custom modes below — revealed by **natural mouse-wheel scroll**, browser-style, no forced paging.
 
 > ⚠️ **Not an official DeepSeek package.** This is a locally authored plugin. The `@deepseek-ai/` name prefix is used only because the Harness client-modules loader mounts plugins under the package name; the code is not affiliated with or maintained by DeepSeek.
